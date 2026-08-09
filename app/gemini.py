@@ -3,7 +3,7 @@ import requests
 
 GEMINI_URL = (
     "https://generativelanguage.googleapis.com/v1beta/models/"
-    "gemini-3.6-flash:generateContent"
+    "gemini-2.5-flash:generateContent"
 )
 
 SYSTEM_INSTRUCTION = """
@@ -48,6 +48,7 @@ def ask_gemini(message: str, history: list[dict]) -> str:
         },
         "contents": contents,
         "generationConfig": {
+            "temperature": 0.4,
             "maxOutputTokens": 1200
         }
     }
