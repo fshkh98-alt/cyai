@@ -1,77 +1,70 @@
-const messages = document.getElementById("messages");
-const form = document.getElementById("chatForm");
-const input = document.getElementById("input");
-const typing = document.getElementById("typing");
-const clearBtn = document.getElementById("clearBtn");
 
-let sessionId = localStorage.getItem("cyberguard_session");
-if (!sessionId) {
-  sessionId = crypto.randomUUID();
-  localStorage.setItem("cyberguard_session", sessionId);
-}
+(() => {
+  if (window.__cyberguardUI) return;
+  window.__cyberguardUI = true;
 
-function addMessage(text, role) {
-  const wrapper = document.createElement("div");
-  wrapper.className = `message ${role}`;
-  const avatar = document.createElement("div");
-  avatar.className = "avatar";
-  avatar.textContent = role === "bot" ? "AI" : "أنت";
-  const bubble = document.createElement("div");
-  bubble.className = "bubble";
-  bubble.textContent = text;
-  wrapper.append(avatar, bubble);
-  messages.appendChild(wrapper);
-  messages.scrollTop = messages.scrollHeight;
-}
+  marked.setOptions({gfm:true, breaks:true});
 
-async function sendMessage(text) {
-  addMessage(text, "user");
-  typing.style.display = "block";
-  input.disabled = true;
+  const clean = text => DOMPurify.sanitize(marked.parse(text || ""));
 
-  try {
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({session_id: sessionId, message: text})
+  function upgrade(root=document) {
+    root.querySelectorAll("pre").forEach(pre => {
+      if (pre.dataset.cgDone) return;
+      const code = pre.querySelector("code");
+      if (!code) return;
+      pre.dataset.cgDone = "1";
+
+      const langClass = [...code.classList].find(c => c.startsWith("language-"));
+      const lang = langClass ? langClass.slice(9) : "code";
+
+      try { hljs.highlightElement(code); } catch (_) {}
+
+      const box = document.createElement("div");
+      box.className = "cg-code";
+      const bar = document.createElement("div");
+      bar.className = "cg-code-bar";
+
+      const label = document.createElement("span");
+      label.textContent = lang.toUpperCase();
+
+      const copy = document.createElement("button");
+      copy.type = "button";
+      copy.textContent = "نسخ";
+      copy.onclick = async () => {
+        try {
+          await navigator.clipboard.writeText(code.innerText);
+          copy.textContent = "تم النسخ ✓";
+          setTimeout(() => copy.textContent = "نسخ", 1200);
+        } catch (_) { copy.textContent = "تعذر النسخ"; }
+      };
+
+      bar.append(label, copy);
+      pre.parentNode.insertBefore(box, pre);
+      box.append(bar, pre);
     });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || "حدث خطأ");
-    addMessage(data.answer, "bot");
-  } catch (err) {
-    addMessage("تعذر الحصول على الإجابة: " + err.message, "bot");
-  } finally {
-    typing.style.display = "none";
-    input.disabled = false;
-    input.focus();
   }
-}
 
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const text = input.value.trim();
-  if (!text) return;
-  input.value = "";
-  await sendMessage(text);
-});
+  // Expose a helper for the existing chat code.
+  window.CyberGuardMarkdown = text => {
+    const holder = document.createElement("div");
+    holder.innerHTML = clean(text);
+    upgrade(holder);
+    return holder.innerHTML;
+  };
 
-input.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault();
-    form.requestSubmit();
-  }
-});
-
-document.querySelectorAll(".topics button").forEach(btn => {
-  btn.addEventListener("click", () => {
-    input.value = btn.dataset.q;
-    input.focus();
+  // Automatically enhance dynamically-added AI messages.
+  const observer = new MutationObserver(mutations => {
+    for (const m of mutations)
+      for (const n of m.addedNodes)
+        if (n.nodeType === 1) upgrade(n);
   });
-});
+  observer.observe(document.body, {childList:true, subtree:true});
 
-clearBtn.addEventListener("click", async () => {
-  await fetch(`/api/chat/${sessionId}`, {method: "DELETE"});
-  messages.innerHTML = "";
-  addMessage("تم مسح سجل المحادثة. اطرح سؤالك الجديد في الأمن السيبراني.", "bot");
-});
+  // If an existing frontend uses common message selectors, render raw AI markdown.
+  document.querySelectorAll(".message.ai,.message.bot,.assistant-message,.bot-message").forEach(el => {
+    if (!el.dataset.cgMarkdown) {
+      el.dataset.cgMarkdown = "1";
+      el.innerHTML = window.CyberGuardMarkdown(el.textContent);
+    }
+  });
+})();

@@ -118,3 +118,19 @@ body {
   .chat-header { padding: 18px 14px; }
   .composer { margin: 0 12px; }
 }
+
+
+/* CyberGuard AI - final UI layer */
+.cg-code{direction:ltr;background:#0a1019;border:1px solid #26364b;border-radius:9px;overflow:hidden;margin:12px 0}
+.cg-code-bar{height:31px;background:#121d2b;border-bottom:1px solid #26364b;display:flex;align-items:center;justify-content:space-between;padding:0 8px}
+.cg-code-bar span{font:700 8px ui-monospace,Consolas,monospace;color:#6f89a5}
+.cg-code-bar button{border:1px solid #29405a;background:#17253a;color:#91a7be;border-radius:5px;padding:3px 8px;font-size:8px}
+.cg-code-bar button:hover{color:#fff;border-color:#3b6385}
+.cg-code pre{margin:0;padding:13px;overflow:auto}
+.cg-code pre code{font:11px/1.75 ui-monospace,Consolas,monospace!important;background:transparent!important}
+pre{max-width:100%;overflow:auto}
+table{border-collapse:collapse;width:100%;margin:10px 0}
+th,td{border:1px solid #223047;padding:7px 9px}
+th{background:#172439}
+blockquote{border-right:3px solid #328fbe;background:#0b131f;padding:5px 11px;margin:10px 0}
+code:not(pre code){direction:ltr;unicode-bidi:embed;background:#18253a;color:#7ed9ff;border:1px solid #2a3c56;border-radius:4px;padding:2px 5px}
